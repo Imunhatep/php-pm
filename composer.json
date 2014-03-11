@@ -9,6 +9,9 @@
         "zendframework/zend-http": "2.3.*@dev",
         "zendframework/zend-mvc": "2.3.*@dev"
     },
+    "bin": [
+        "bin/ppm"
+    ],
     "autoload": {
         "psr-4": {
             "PHPPM\\": ""
