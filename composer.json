@@ -7,12 +7,12 @@
         "symfony/http-foundation": "2.4.*@dev",
         "symfony/http-kernel": "2.4.*@dev"
     },
+    "bin": [
+        "bin/ppm"
+    ],
     "autoload": {
         "psr-4": {
             "PHPPM\\": ""
         }
-    },
-    "bin": [
-        "bin/ppm"
-    ],
+    }
 }
