@@ -14,5 +14,7 @@
             "PHPPM\\": ""
         }
     },
-    "bin": ["bin/ppm"]
+    "bin": [
+        "bin/ppm"
+    ]
 }
