@@ -2,6 +2,9 @@
 
 namespace PHPPM;
 
+use Rephp\LoopEvent\SchedulerLoop;
+use Rephp\Socket\Socket;
+
 class Client
 {
     /**
@@ -22,7 +25,7 @@ class Client
     function __construct($controllerPort = 8080)
     {
         $this->controllerPort = $controllerPort;
-        $this->loop = \React\EventLoop\Factory::create();
+        $this->loop = new SchedulerLoop();
     }
 
     /**
@@ -35,7 +38,7 @@ class Client
             unset($this->connection);
         }
         $client = stream_socket_client('tcp://127.0.0.1:5500');
-        $this->connection = new \React\Socket\Connection($client, $this->loop);
+        $this->connection = new Socket($client, $this->loop);
         return $this->connection;
     }
 
