@@ -52,7 +52,17 @@ Options:
 ### Example
 
 ```bash
-$ ./bin/ppm start ~/my/path/to/symfony/ --bridge=httpKernel
+$ ./bin/ppm start ~/my/path/to/symfony/ --bridge=HttpKernel
+```
+
+### Or through placing ppm.json in root dir
+``` json
+{
+	"bootstrap": "\\PHPPM\\Bootstraps\\Symfony",
+	"bridge": "HttpKernel",
+	"appenv": "dev",
+	"workers": 8
+}
 ```
 
 All worker start a own HTTP Server which listens on port 5501, 5502, 5503 etc. Range is `5501 -> 5500+<workersCount>`.
