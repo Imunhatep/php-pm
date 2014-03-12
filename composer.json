@@ -1,7 +1,7 @@
 {
     "name": "imunhatep/php-pm",
     "repositories": [
-        { "type": "vcs", "url": "http://github.com/Imunhatep/reactphp" }
+        { "type": "vcs", "url": "http://github.com/Imunhatep/rephp" }
     ],
     "require": {
         "imunhatep/rephp": "@dev",
