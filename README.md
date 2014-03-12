@@ -93,11 +93,18 @@ server {
     server_name servername.com;
 
     location / {
-        try_files $uri @backend;
-    }
-    location @backend {
-        proxy_pass http://backend;
-    }
+                #index index.php;
+
+                # try to serve file directly, fallback to rewrite
+                try_files $uri @rewriteapp;
+        }
+
+        location @rewriteapp {
+                if (!-f $request_filename) {
+                        proxy_pass http://backend;
+                        break;
+                }
+        }
 }
 
 ```
