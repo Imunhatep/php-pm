@@ -59,6 +59,8 @@ All worker start a own HTTP Server which listens on port 5501, 5502, 5503 etc. R
 
 ### Setup 1. Use external Load-Balancer
 
+![ReactPHP with external Load-Balancer](doc/reactphp-external-balancer.jpg)
+
 Example config for NGiNX for 8 workers:
 
 ```nginx
