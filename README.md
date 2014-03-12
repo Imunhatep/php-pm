@@ -1,10 +1,28 @@
 PHP ProcessManager for Request-Response Applications
 ====================================================
 
-PHP-PM is a process manager for Request-Response Frameworks running in a ReactPHP environment.
-The approach of this is to kill the expensive bootstrap of php (declaring symbols) and bootstrap of feature-rich frameworks.
+This is a fork of [marcj/php-pm](https://github.com/marcj/php-pm). 
+
+PHP-PM is a process manager for Request-Response Frameworks running in a [@RePHP](https://github.com/Imunhatep/rephp) environment. The approach of this is to kill the expensive bootstrap of php (declaring symbols) and bootstrap of feature-rich frameworks.
 
 More information can be found in the article: [Bring High Performance Into Your PHP App (with ReactPHP)](http://marcjschmidt.de/blog/2014/02/08/php-high-performance.html)
+
+## Install
+
+The recommended way to install react is [through composer](http://getcomposer.org).
+
+```JSON
+{
+    "repositories": [
+        { "type": "vcs", "url": "http://github.com/Imunhatep/rephp" },
+        { "type": "vcs", "url": "http://github.com/Imunhatep/php-pm" }
+    ],
+    "require": {
+        "imunhatep/php-pm": "@dev"
+    }
+}
+```
+
 
 ### Command
 
@@ -41,9 +59,7 @@ All worker start a own HTTP Server which listens on port 5501, 5502, 5503 etc. R
 
 ### Setup 1. Use external Load-Balancer
 
-![ReactPHP with external Load-Balancer](doc/reactphp-external-balancer.jpg)
-
-Example config for NGiNX:
+Example config for NGiNX for 8 workers:
 
 ```nginx
 upstream backend  {
@@ -53,18 +69,28 @@ upstream backend  {
     server 127.0.0.1:5504;
     server 127.0.0.1:5505;
     server 127.0.0.1:5506;
+    server 127.0.0.1:5507;
+    server 127.0.0.1:5508;
 }
 
 server {
     root /path/to/symfony/web/;
     server_name servername.com;
     location / {
-        try_files $uri @backend;
-    }
-    location @backend {
-        proxy_pass http://backend;
-    }
+                #index index.php;
+
+                # try to serve file directly, fallback to rewrite
+                try_files $uri @rewriteapp;
+        }
+
+        location @rewriteapp {
+                if (!-f $request_filename) {
+                        proxy_pass http://backend;
+                        break;
+                }
+        }
 }
+
 ```
 
 ### Setup 2. Use internal Load-Balancer
