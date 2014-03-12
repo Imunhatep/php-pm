@@ -3,10 +3,9 @@
 namespace PHPPM;
 
 use React\Socket\ConnectionInterface;
-use React\Socket\Server;
 use Rephp\LoopEvent\SchedulerLoop;
-use Rephp\Socket\Socket;
-use Rephp\Socket\StreamSocketInterface;
+use Rephp\Scheduler\SystemCall;
+use Rephp\Server\Server;
 
 class ProcessManager
 {
@@ -140,15 +139,9 @@ class ProcessManager
         return $this->appenv;
     }
 
-    public function run()
+    public function runRe()
     {
         $this->loop = new SchedulerLoop();
-
-        //---------------------
-        $this->client = stream_socket_client('tcp://127.0.0.1:5500');
-        $this->controller = new Socket($this->client, $this->loop);
-
-
         $this->controller = new Server($this->loop);
         $this->controller->on('connection', array($this, 'onSlaveConnection'));
         $this->controller->listen(5500);
@@ -162,7 +155,26 @@ class ProcessManager
         }
 
         $this->run = true;
-        $this->loop();
+        $this->loop->run();
+    }
+
+    public function run()
+    {
+        $this->loop = \React\EventLoop\Factory::create();
+        $this->controller = new \React\Socket\Server($this->loop);
+        $this->controller->on('connection', array($this, 'onSlaveConnection'));
+        $this->controller->listen(5500);
+
+        $this->web = new \React\Socket\Server($this->loop);
+        $this->web->on('connection', array($this, 'onWeb'));
+        $this->web->listen($this->port);
+
+        for ($i = 0; $i < $this->slaveCount; $i++) {
+            $this->newInstance();
+        }
+
+        $this->run = true;
+        $this->loop->run();
     }
 
     public function onWeb(ConnectionInterface $incoming)
@@ -216,6 +228,7 @@ class ProcessManager
             'data',
             \Closure::bind(
                 function ($data) use ($conn) {
+                    error_log($data);
                     $this->onData($data, $conn);
                 },
                 $this
@@ -305,17 +318,16 @@ class ProcessManager
         }
     }
 
-    function loop()
-    {
-        $this->loop->run();
-    }
-
     function newInstance()
     {
         $pid = pcntl_fork();
-        if (!$pid) {
-            //we're in the slave now
-            new ProcessSlave($this->getBridge(), $this->appBootstrap, $this->appenv);
+        if ($pid == -1) {
+            die('could not fork');
+        }
+        else {
+            // we are the child
+            $child = new ProcessSlave($this->getBridge(), $this->appBootstrap, $this->appenv);
+            $child->connectToMaster();
             exit;
         }
     }
