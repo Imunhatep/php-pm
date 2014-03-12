@@ -6,6 +6,8 @@ use React\Http\Request;
 use React\Http\Response;
 use React\Socket\ConnectionException;
 use Rephp\LoopEvent\SchedulerLoop;
+use Rephp\Scheduler\SystemCall;
+use Rephp\Scheduler\Task;
 use Rephp\Server\Server;
 use Rephp\Socket\Socket;
 
@@ -111,7 +113,7 @@ class ProcessSlave
                 $this->port++;
             }
         }
-        $this->loop->run();
+        define('MYNAME', "SLAVE_$port");
 
         $this->connectToMaster();
 
