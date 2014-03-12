@@ -1,7 +1,10 @@
 {
     "name": "imunhatep/php-pm",
+    "repositories": [
+        { "type": "vcs", "url": "http://github.com/Imunhatep/reactphp" }
+    ],
     "require": {
-        "react/react": "~0.4",
+        "imunhatep/rephp": "@dev",
         "stack/builder": "~1.0",
         "symfony/http-foundation": "~2.4",
         "symfony/http-kernel": "~2.4",
