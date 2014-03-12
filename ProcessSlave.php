@@ -6,8 +6,6 @@ use React\Http\Request;
 use React\Http\Response;
 use React\Socket\ConnectionException;
 use Rephp\LoopEvent\SchedulerLoop;
-use Rephp\Scheduler\SystemCall;
-use Rephp\Scheduler\Task;
 use Rephp\Server\Server;
 use Rephp\Socket\Socket;
 
@@ -92,15 +90,7 @@ class ProcessSlave
         $client = stream_socket_client('tcp://127.0.0.1:5500');
         $this->connection = new Socket($client, $this->loop);
 
-        $this->connection->on(
-            'close',
-            \Closure::bind(
-                function () {
-                    $this->shutdown();
-                },
-                $this
-            )
-        );
+	$this->connection->on('close', \Closure::bind( function () { $this->shutdown(); }, $this ) );
 
         $this->connection->write(json_encode(['cmd' => 'register', 'pid' => getmypid(), 'port' => $this->port]));
     }
@@ -109,7 +99,6 @@ class ProcessSlave
     {
         $server = new Server($this->loop);
         $http = new \React\Http\Server($server);
-
         $http->on('request', array($this, 'onRequest'));
 
         $maxPort = $this->port + 99;
@@ -122,6 +111,7 @@ class ProcessSlave
                 $this->port++;
             }
         }
+        $this->loop->run();
 
         $this->connectToMaster();
 
