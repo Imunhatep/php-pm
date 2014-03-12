@@ -2,6 +2,13 @@
 
 namespace PHPPM;
 
+use React\Http\Request;
+use React\Http\Response;
+use React\Socket\ConnectionException;
+use Rephp\LoopEvent\SchedulerLoop;
+use Rephp\Server\Server;
+use Rephp\Socket\Socket;
+
 class ProcessSlave
 {
 
@@ -35,7 +42,7 @@ class ProcessSlave
      */
     protected $appenv;
 
-    public function __construct($bridgeName = null, $appBootstrap, $appenv)
+    function __construct($bridgeName = null, $appBootstrap, $appenv)
     {
         $this->bridgeName = $bridgeName;
         $this->bootstrap($appBootstrap, $appenv);
@@ -58,8 +65,9 @@ class ProcessSlave
         if (null === $this->bridge && $this->bridgeName) {
             if (true === class_exists($this->bridgeName)) {
                 $bridgeClass = $this->bridgeName;
-            } else {
-                $bridgeClass = sprintf('PHPPM\Bridges\\%s', ucfirst($this->bridgeName));
+            }
+            else {
+                $bridgeClass = sprintf('\\PHPPM\\Bridges\\%s', ucfirst($this->bridgeName));
             }
 
             $this->bridge = new $bridgeClass;
@@ -75,24 +83,19 @@ class ProcessSlave
         }
     }
 
-    public function connectToMaster()
+    function connectToMaster()
     {
-        $this->loop = \React\EventLoop\Factory::create();
+        $this->loop = new SchedulerLoop();
+
+        //---------------------
         $this->client = stream_socket_client('tcp://127.0.0.1:5500');
-        $this->connection = new \React\Socket\Connection($this->client, $this->loop);
+        $this->connection = new Socket($this->client, $this->loop);
 
-        $this->connection->on(
-            'close',
-            \Closure::bind(
-                function () {
-                    $this->shutdown();
-                },
-                $this
-            )
-        );
+        $this->connection->on('close', function () { $this->shutdown(); } );
 
-        $socket = new \React\Socket\Server($this->loop);
+        $socket = new Server($this->loop);
         $http = new \React\Http\Server($socket);
+
         $http->on('request', array($this, 'onRequest'));
 
         $port = 5501;
@@ -100,25 +103,29 @@ class ProcessSlave
             try {
                 $socket->listen($port);
                 break;
-            } catch( \React\Socket\ConnectionException $e ) {
+            }
+            catch (ConnectionException $e) {
                 $port++;
             }
         }
+        $this->loop->run();
 
         $this->connection->write(json_encode(array('cmd' => 'register', 'pid' => getmypid(), 'port' => $port)));
     }
 
-    public function onRequest(\React\Http\Request $request, \React\Http\Response $response)
+
+    function onRequest(Request $request, Response $response)
     {
         if ($bridge = $this->getBridge()) {
             return $bridge->onRequest($request, $response);
-        } else {
+        }
+        else {
             $response->writeHead('404');
             $response->end('No Bridge Defined.');
         }
     }
 
-    public function bye()
+    function bye()
     {
         if ($this->connection->isWritable()) {
             $this->connection->write(json_encode(array('cmd' => 'unregister', 'pid' => getmypid())));
