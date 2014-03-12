@@ -4,6 +4,8 @@
         { "type": "vcs", "url": "http://github.com/Imunhatep/rephp" }
     ],
     "require": {
+        "zendframework/zend-http": "2.3.*@dev",
+        "zendframework/zend-mvc": "2.3.*@dev",
         "imunhatep/rephp": "@dev",
         "stack/builder": "~1.0",
         "symfony/http-foundation": "~2.4",
