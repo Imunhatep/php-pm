@@ -2,6 +2,12 @@
 
 namespace PHPPM;
 
+use React\Socket\ConnectionInterface;
+use React\Socket\Server;
+use Rephp\LoopEvent\SchedulerLoop;
+use Rephp\Socket\Socket;
+use Rephp\Socket\StreamSocketInterface;
+
 class ProcessManager
 {
     /**
@@ -136,12 +142,18 @@ class ProcessManager
 
     public function run()
     {
-        $this->loop = \React\EventLoop\Factory::create();
-        $this->controller = new \React\Socket\Server($this->loop);
+        $this->loop = new SchedulerLoop();
+
+        //---------------------
+        $this->client = stream_socket_client('tcp://127.0.0.1:5500');
+        $this->controller = new Socket($this->client, $this->loop);
+
+
+        $this->controller = new Server($this->loop);
         $this->controller->on('connection', array($this, 'onSlaveConnection'));
         $this->controller->listen(5500);
 
-        $this->web = new \React\Socket\Server($this->loop);
+        $this->web = new Server($this->loop);
         $this->web->on('connection', array($this, 'onWeb'));
         $this->web->listen($this->port);
 
@@ -153,11 +165,11 @@ class ProcessManager
         $this->loop();
     }
 
-    public function onWeb(\React\Socket\Connection $incoming)
+    public function onWeb(ConnectionInterface $incoming)
     {
         $slaveId = $this->getNextSlave();
         $port = $this->slaves[$slaveId]['port'];
-        $client = stream_socket_client('tcp://127.0.0.1:' . $port);
+        $client = stream_socket_client('tcp://localhost:' . $port);
         $redirect = new \React\Stream\Stream($client, $this->loop);
 
         $redirect->on(
@@ -198,7 +210,7 @@ class ProcessManager
         return $this->index;
     }
 
-    public function onSlaveConnection(\React\Socket\Connection $conn)
+    public function onSlaveConnection(ConnectionInterface $conn)
     {
         $conn->on(
             'data',

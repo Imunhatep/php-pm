@@ -91,7 +91,7 @@ class ProcessSlave
         $this->client = stream_socket_client('tcp://127.0.0.1:5500');
         $this->connection = new Socket($this->client, $this->loop);
 
-        $this->connection->on('close', function () { $this->shutdown(); } );
+        $this->connection->on('close', \Closure::bind(function () { $this->shutdown(); }, $this) );
 
         $socket = new Server($this->loop);
         $http = new \React\Http\Server($socket);
