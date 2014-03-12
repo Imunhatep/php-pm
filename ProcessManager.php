@@ -80,7 +80,9 @@ class ProcessManager
 
         if (!pcntl_fork()) {
             $this->run();
-        } else {
+        }
+        else {
+            die('pcntl_fork function failed!');
         }
     }
 

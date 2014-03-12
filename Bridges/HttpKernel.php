@@ -4,7 +4,6 @@ namespace PHPPM\Bridges;
 
 use PHPPM\AppBootstrapInterface;
 use PHPPM\Bootstraps\BootstrapInterface;
-use PHPPM\Bridges\BridgeInterface;
 use React\Http\Request as ReactRequest;
 use React\Http\Response as ReactResponse;
 use Stack\Builder;
@@ -68,17 +67,18 @@ class HttpKernel implements BridgeInterface
                 $syRequest = new SymfonyRequest();
                 $syRequest->headers->replace($request->getHeaders());
                 $syRequest->setMethod($request->getMethod());
+                $syRequest->server->set('DOCUMENT_URI', '/index.php/'.$request->getPath());
                 $syRequest->server->set('REQUEST_URI', $request->getPath());
                 $syRequest->server->set('SERVER_NAME', explode(':', $request->getHeaders()['Host'])[0]);
-
                 $syResponse = $this->application->handle($syRequest);
                 $this->application->terminate($syRequest, $syResponse);
 
                 $headers = array_map('current', $syResponse->headers->all());
                 $response->writeHead($syResponse->getStatusCode(), $headers);
                 $response->end($syResponse->getContent());
-            } catch (\Exception $e) {
-                //
+            }
+            catch (\Exception $e) {
+                error_log($e->getMessage());
             }
         }
     }
