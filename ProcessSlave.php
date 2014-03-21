@@ -6,6 +6,8 @@ use React\Http\Request;
 use React\Http\Response;
 use React\Socket\ConnectionException;
 use Rephp\LoopEvent\SchedulerLoop;
+use Rephp\Scheduler\SystemCall;
+use Rephp\Scheduler\Task;
 use Rephp\Server\Server;
 use Rephp\Socket\Socket;
 
@@ -16,11 +18,6 @@ class ProcessSlave
      * @var \React\EventLoop\LibEventLoop|\React\EventLoop\StreamSelectLoop
      */
     protected $loop;
-
-    /**
-     * @var resource
-     */
-    protected $client;
 
     /**
      * @var \React\Socket\Connection
@@ -42,12 +39,17 @@ class ProcessSlave
      */
     protected $appenv;
 
+    /**
+     * @var integer
+     */
+    protected $port;
+
     function __construct($bridgeName = null, $appBootstrap, $appenv)
     {
         $this->bridgeName = $bridgeName;
+
+        $this->loop = new SchedulerLoop();
         $this->bootstrap($appBootstrap, $appenv);
-        $this->connectToMaster();
-        $this->loop->run();
     }
 
     protected function shutdown()
@@ -83,36 +85,47 @@ class ProcessSlave
         }
     }
 
-    function connectToMaster()
+    protected function connectToMaster()
     {
-        $this->loop = new SchedulerLoop();
-
         //---------------------
-        $this->client = stream_socket_client('tcp://127.0.0.1:5500');
-        $this->connection = new Socket($this->client, $this->loop);
+        $client = stream_socket_client('tcp://127.0.0.1:5500');
+        $this->connection = new Socket($client, $this->loop);
 
-        $this->connection->on('close', \Closure::bind(function () { $this->shutdown(); }, $this) );
+        $this->connection->on(
+            'close',
+            \Closure::bind(
+                function () {
+                    $this->shutdown();
+                },
+                $this
+            )
+        );
 
-        $socket = new Server($this->loop);
-        $http = new \React\Http\Server($socket);
+        $this->connection->write(json_encode(['cmd' => 'register', 'pid' => getmypid(), 'port' => $this->port]));
+    }
+
+    function listenHttpServer()
+    {
+        $server = new Server($this->loop);
+        $http = new \React\Http\Server($server);
 
         $http->on('request', array($this, 'onRequest'));
 
-        $port = 5501;
-        while ($port < 5600) {
+        $this->port = 5501;
+        while ($this->port < 5600) {
             try {
-                $socket->listen($port);
+                $server->listen($this->port);
                 break;
             }
             catch (ConnectionException $e) {
-                $port++;
+                $this->port++;
             }
         }
+
+        $this->connectToMaster();
+
         $this->loop->run();
-
-        $this->connection->write(json_encode(array('cmd' => 'register', 'pid' => getmypid(), 'port' => $port)));
     }
-
 
     function onRequest(Request $request, Response $response)
     {
