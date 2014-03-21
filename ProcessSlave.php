@@ -39,6 +39,11 @@ class ProcessSlave
      */
     protected $appenv;
 
+    /**
+     * @var integer
+     */
+    protected $port;
+
     function __construct($bridgeName = null, $appBootstrap, $appenv)
     {
         $this->bridgeName = $bridgeName;
@@ -80,7 +85,7 @@ class ProcessSlave
         }
     }
 
-    function connectToMaster()
+    protected function connectToMaster()
     {
         //---------------------
         $client = stream_socket_client('tcp://127.0.0.1:5500');
@@ -96,24 +101,28 @@ class ProcessSlave
             )
         );
 
+        $this->connection->write(json_encode(['cmd' => 'register', 'pid' => getmypid(), 'port' => $this->port]));
+    }
+
+    function listenHttpServer()
+    {
         $server = new Server($this->loop);
         $http = new \React\Http\Server($server);
 
         $http->on('request', array($this, 'onRequest'));
 
-        $port = 5501;
-        while ($port < 5600) {
+        $this->port = 5501;
+        while ($this->port < 5600) {
             try {
-                $server->listen($port);
+                $server->listen($this->port);
                 break;
             }
             catch (ConnectionException $e) {
-                $port++;
+                $this->port++;
             }
         }
-        define('MYNAME', "SLAVE_$port");
 
-        $this->connection->write(json_encode(['cmd' => 'register', 'pid' => getmypid(), 'port' => $port]));
+        $this->connectToMaster();
 
         $this->loop->run();
     }
