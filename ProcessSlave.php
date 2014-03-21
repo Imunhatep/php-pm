@@ -113,10 +113,8 @@ class ProcessSlave
                 $this->port++;
             }
         }
-        define('MYNAME', "SLAVE_$port");
 
         $this->connectToMaster();
-
         $this->loop->run();
     }
 
