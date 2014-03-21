@@ -5,6 +5,7 @@ namespace PHPPM;
 use React\Socket\ConnectionInterface;
 use Rephp\LoopEvent\SchedulerLoop;
 use Rephp\Scheduler\SystemCall;
+use Rephp\Scheduler\Task;
 use Rephp\Server\Server;
 
 class ProcessManager
@@ -139,36 +140,27 @@ class ProcessManager
         return $this->appenv;
     }
 
-    public function runRe()
+    // till react 0.4.1, #https://github.com/reactphp/react/issues/275
+    public function run()
     {
         $this->loop = new SchedulerLoop();
         $this->controller = new Server($this->loop);
         $this->controller->on('connection', array($this, 'onSlaveConnection'));
         $this->controller->listen(5500);
 
-        $this->web = new Server($this->loop);
-        $this->web->on('connection', array($this, 'onWeb'));
-        $this->web->listen($this->port);
-
-        for ($i = 0; $i < $this->slaveCount; $i++) {
-            $this->newInstance();
-        }
+        $this->loop->add($this->newInstanceTask(), 'MakeInstance');
 
         $this->run = true;
         $this->loop->run();
     }
 
-    public function run()
+    public function run2()
     {
         $this->loop = \React\EventLoop\Factory::create();
         $this->controller = new \React\Socket\Server($this->loop);
         $this->controller->on('connection', array($this, 'onSlaveConnection'));
         $this->controller->listen(5500);
 
-        $this->web = new \React\Socket\Server($this->loop);
-        $this->web->on('connection', array($this, 'onWeb'));
-        $this->web->listen($this->port);
-
         for ($i = 0; $i < $this->slaveCount; $i++) {
             $this->newInstance();
         }
@@ -177,7 +169,7 @@ class ProcessManager
         $this->loop->run();
     }
 
-    public function onWeb(ConnectionInterface $incoming)
+    function onWeb(ConnectionInterface $incoming)
     {
         $slaveId = $this->getNextSlave();
         $port = $this->slaves[$slaveId]['port'];
@@ -280,11 +272,13 @@ class ProcessManager
             'port' => $port,
             'connection' => $conn
         );
+
         if ($this->waitForSlaves && $this->slaveCount === count($this->slaves)) {
             $slaves = array();
             foreach ($this->slaves as $slave) {
                 $slaves[] = $slave['port'];
             }
+
             echo sprintf("%d slaves (%s) up and ready.\n", $this->slaveCount, implode(', ', $slaves));
         }
     }
@@ -318,16 +312,28 @@ class ProcessManager
         }
     }
 
+    function newInstanceTask()
+    {
+        yield;
+        for ($i = 1; $i <= $this->slaveCount; $i++) {
+            yield $this->newInstance();
+        }
+    }
+
     function newInstance()
     {
         $pid = pcntl_fork();
         if ($pid == -1) {
             die('could not fork');
         }
-        else {
+        else if ($pid) {
+            // we are parent
+            //echo "Started slave pid: $pid\n";
+        }
+        else{
             // we are the child
             $child = new ProcessSlave($this->getBridge(), $this->appBootstrap, $this->appenv);
-            $child->connectToMaster();
+            $child->listenHttpServer();
             exit;
         }
     }
