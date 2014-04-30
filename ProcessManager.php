@@ -332,7 +332,7 @@ class ProcessManager
         }
         else{
             // we are the child
-            $child = new ProcessSlave($this->getBridge(), $this->appBootstrap, $this->appenv);
+            $child = new ProcessSlave($this->port, $this->getBridge(), $this->appBootstrap, $this->appenv);
             $child->listenHttpServer();
             exit;
         }

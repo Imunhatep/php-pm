@@ -44,8 +44,9 @@ class ProcessSlave
      */
     protected $port;
 
-    function __construct($bridgeName = null, $appBootstrap, $appenv)
+    function __construct($port, $bridgeName = null, $appBootstrap, $appenv)
     {
+        $this->port = $port;
         $this->bridgeName = $bridgeName;
 
         $this->loop = new SchedulerLoop();
@@ -111,8 +112,8 @@ class ProcessSlave
 
         $http->on('request', array($this, 'onRequest'));
 
-        $this->port = 5501;
-        while ($this->port < 5600) {
+        $maxPort = $this->port + 99;
+        while ($this->port < $maxPort) {
             try {
                 $server->listen($this->port);
                 break;
