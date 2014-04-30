@@ -17,6 +17,8 @@ The recommended way to install react is [through composer](http://getcomposer.or
         { "type": "vcs", "url": "http://github.com/Imunhatep/rephp" },
         { "type": "vcs", "url": "http://github.com/Imunhatep/php-pm" }
     ],
+    "minimum-stability": "dev",
+    "prefer-stable": true,
     "require": {
         "imunhatep/php-pm": "@dev"
     }
