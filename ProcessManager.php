@@ -169,13 +169,6 @@ class ProcessManager
         $this->loop->run();
     }
 
-    function startWebServer()
-    {
-        $this->web = new \React\Socket\Server($this->loop);
-        $this->web->on('connection', array($this, 'onWeb'));
-        $this->web->listen($this->port);
-    }
-
     function onWeb(ConnectionInterface $incoming)
     {
         $slaveId = $this->getNextSlave();
@@ -339,7 +332,7 @@ class ProcessManager
         }
         else{
             // we are the child
-            $child = new ProcessSlave($this->getBridge(), $this->appBootstrap, $this->appenv);
+            $child = new ProcessSlave($this->port, $this->getBridge(), $this->appBootstrap, $this->appenv);
             $child->listenHttpServer();
             exit;
         }
