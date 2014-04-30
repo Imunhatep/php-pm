@@ -147,8 +147,6 @@ class ProcessManager
         $this->controller->on('connection', array($this, 'onSlaveConnection'));
         $this->controller->listen(5500);
 
-        //$this->startWebServer();
-
         $this->loop->add($this->newInstanceTask(), 'MakeInstance');
 
         $this->run = true;
@@ -162,21 +160,12 @@ class ProcessManager
         $this->controller->on('connection', array($this, 'onSlaveConnection'));
         $this->controller->listen(5500);
 
-        //$this->startWebServer();
-
         for ($i = 0; $i < $this->slaveCount; $i++) {
             $this->newInstance();
         }
 
         $this->run = true;
         $this->loop->run();
-    }
-
-    function startWebServer()
-    {
-        $this->web = new \React\Socket\Server($this->loop);
-        $this->web->on('connection', array($this, 'onWeb'));
-        $this->web->listen($this->port);
     }
 
     function onWeb(ConnectionInterface $incoming)
@@ -341,7 +330,7 @@ class ProcessManager
         }
         else{
             // we are the child
-            $child = new ProcessSlave($this->getBridge(), $this->appBootstrap, $this->appenv);
+            $child = new ProcessSlave($this->port, $this->getBridge(), $this->appBootstrap, $this->appenv);
             $child->listenHttpServer();
             exit;
         }
