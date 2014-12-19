@@ -124,6 +124,7 @@ class ProcessSlave
         }
 
         $this->connectToMaster();
+
         $this->loop->run();
     }
 

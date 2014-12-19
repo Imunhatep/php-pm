@@ -90,6 +90,7 @@ upstream backend  {
 server {
     root /path/to/symfony/web/;
     server_name servername.com;
+    
     location / {
                 #index index.php;
 
