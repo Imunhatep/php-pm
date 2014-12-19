@@ -105,7 +105,6 @@ server {
                 }
         }
 }
-
 ```
 
 ### Setup 2. Use internal Load-Balancer
