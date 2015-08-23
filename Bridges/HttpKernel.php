@@ -1,5 +1,4 @@
 <?php
-
 namespace PHPPM\Bridges;
 
 use PHPPM\AppBootstrapInterface;
@@ -55,11 +54,6 @@ class HttpKernel implements BridgeInterface
         }
     }
 
-    private function convert($size)
-    {
-        return @round($size / pow(1024, 2));
-    }
-
     /**
      * Handle a request using a HttpKernelInterface implementing application.
      *
@@ -70,9 +64,6 @@ class HttpKernel implements BridgeInterface
     {
         if (null !== $this->application) {
             try {
-                $startMemory = memory_get_usage(true);
-                $timeStart = microtime(true);
-
                 $syRequest = new SymfonyRequest();
                 $syRequest->headers->replace($request->getHeaders());
                 $syRequest->setMethod($request->getMethod());
@@ -96,25 +87,4 @@ class HttpKernel implements BridgeInterface
         }
     }
 
-    /**
-     * @param $request
-     * @param $memory
-     */
-    private function writeFile(ReactRequest $request, $totalMemory, $memory, $time)
-    {
-        $params = array();
-        foreach ($request->getQuery() as $k => $v) {
-            if (is_array($v)) {
-                foreach ($v as $v1) {
-                    $params[] = $k.'='.$v1;
-                }
-            } else {
-                $params[] = $k.'='.$v;
-            }
-        }
-
-        $f = fopen('/tmp/react.log', 'a+');
-        fwrite($f, $request->getPath().';'.$request->getMethod().';'.join('&', $params).';'.$this->convert($totalMemory).';'.$this->convert($memory).';'.$time.' sec'."\n");
-        fclose($f);
-    }
 }
