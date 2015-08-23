@@ -10,9 +10,7 @@
         "stack/builder": "~1.0",
         "symfony/http-foundation": "~2.4",
         "symfony/http-kernel": "~2.4",
-        "symfony/console": "~2.4",
-	"zendframework/zend-http": "2.3.*@dev",
-        "zendframework/zend-mvc": "2.3.*@dev"
+        "symfony/console": "~2.4"
     },
     "bin": [
         "bin/ppm"
