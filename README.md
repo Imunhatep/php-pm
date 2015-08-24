@@ -31,7 +31,7 @@ The recommended way to install react is [through composer](http://getcomposer.or
 ```bash
 ./bin/ppm start --help
 Usage:
- start [--bridge="..."] [--port[="..."]] [--workers[="..."]] [--bootstrap[="..."]] [--app-env[="..."]] [working-directory]
+ start [--bridge="..."] [--port[="..."]] [--workers[="..."]] [--bootstrap[="..."]] [--app-env[="..."]] [--memory-limit[="..."]] [--memory-check-time[="..."]] [working-directory]
 
 Arguments:
  working-directory     The working directory.  (default: "./")
@@ -42,6 +42,8 @@ Options:
  --workers             Worker count. Default is 8. Should be minimum equal to the number of CPU cores.
  --app-env             The that your application will use to bootstrap.
  --bootstrap           The class that will be used to bootstrap your application.
+ --memory-limit        The memory limit for one slave process
+ --memory-check-time   Time in seconds for checking memory limit
  --help (-h)           Display this help message.
  --quiet (-q)          Do not output any message.
  --verbose (-v|vv|vvv) Increase the verbosity of messages: 1 for normal output, 2 for more verbose output and 3 for debug

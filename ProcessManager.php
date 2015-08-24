@@ -1,11 +1,8 @@
 <?php
-
 namespace PHPPM;
 
 use React\Socket\ConnectionInterface;
 use Rephp\LoopEvent\SchedulerLoop;
-use Rephp\Scheduler\SystemCall;
-use Rephp\Scheduler\Task;
 use Rephp\Server\Server;
 
 class ProcessManager
@@ -68,10 +65,28 @@ class ProcessManager
     protected $appenv;
 
     /**
+     * Memory limit in MB
+     *
+     * @var int
+     */
+    protected $memoryLimit;
+
+    /**
+     * Time in seconds
+     *
+     * @var int
+     */
+    protected $memoryCheckTime;
+
+    /**
      * @var int
      */
     protected $port = 8080;
 
+    /**
+     * @param int $port
+     * @param int $slaveCount
+     */
     function __construct($port = 8080, $slaveCount = 8)
     {
         $this->slaveCount = $slaveCount;
@@ -86,18 +101,21 @@ class ProcessManager
 
         if (!pcntl_fork()) {
             $this->run();
-        }
-        else {
+        } else {
             die('pcntl_fork function failed!');
         }
     }
 
     /**
      * @param string $bridge
+     *
+     * @return $this
      */
     public function setBridge($bridge)
     {
         $this->bridge = $bridge;
+
+        return $this;
     }
 
     /**
@@ -110,10 +128,14 @@ class ProcessManager
 
     /**
      * @param string $appBootstrap
+     *
+     * @return $this
      */
     public function setAppBootstrap($appBootstrap)
     {
         $this->appBootstrap = $appBootstrap;
+
+        return $this;
     }
 
     /**
@@ -126,10 +148,14 @@ class ProcessManager
 
     /**
      * @param string|null $appenv
+     *
+     * @return $this
      */
     public function setAppEnv($appenv)
     {
         $this->appenv = $appenv;
+
+        return $this;
     }
 
     /**
@@ -138,6 +164,46 @@ class ProcessManager
     public function getAppEnv()
     {
         return $this->appenv;
+    }
+
+    /**
+     * @return int
+     */
+    public function getMemoryLimit()
+    {
+        return $this->memoryLimit;
+    }
+
+    /**
+     * @param int $memoryLimit
+     *
+     * @return $this
+     */
+    public function setMemoryLimit($memoryLimit)
+    {
+        $this->memoryLimit = $memoryLimit;
+
+        return $this;
+    }
+
+    /**
+     * @return int
+     */
+    public function getMemoryCheckTime()
+    {
+        return $this->memoryCheckTime;
+    }
+
+    /**
+     * @param int $memoryCheckTime
+     *
+     * @return $this
+     */
+    public function setMemoryCheckTime($memoryCheckTime)
+    {
+        $this->memoryCheckTime = $memoryCheckTime;
+
+        return $this;
     }
 
     // till react 0.4.1, #https://github.com/reactphp/react/issues/275
@@ -173,7 +239,7 @@ class ProcessManager
     {
         $slaveId = $this->getNextSlave();
         $port = $this->slaves[$slaveId]['port'];
-        $client = stream_socket_client('tcp://localhost:' . $port);
+        $client = stream_socket_client('tcp://localhost:'.$port);
         $redirect = new \React\Stream\Stream($client, $this->loop);
 
         $redirect->on(
@@ -251,7 +317,7 @@ class ProcessManager
     {
         $data = json_decode($data, true);
 
-        $method = 'command' . ucfirst($data['cmd']);
+        $method = 'command'.ucfirst($data['cmd']);
         if (is_callable(array($this, $method))) {
             $this->$method($data, $conn);
         }
@@ -268,8 +334,8 @@ class ProcessManager
         $pid = (int)$data['pid'];
         $port = (int)$data['port'];
         $this->slaves[] = array(
-            'pid' => $pid,
-            'port' => $port,
+            'pid'        => $pid,
+            'port'       => $port,
             'connection' => $conn
         );
 
@@ -325,16 +391,16 @@ class ProcessManager
         $pid = pcntl_fork();
         if ($pid == -1) {
             die('could not fork');
-        }
-        else if ($pid) {
-            // we are parent
-            //echo "Started slave pid: $pid\n";
-        }
-        else{
-            // we are the child
-            $child = new ProcessSlave($this->port, $this->getBridge(), $this->appBootstrap, $this->appenv);
-            $child->listenHttpServer();
-            exit;
+        } else {
+            if ($pid) {
+                // we are parent
+                //echo "Started slave pid: $pid\n";
+            } else {
+                // we are the child
+                $child = new ProcessSlave($this->port, $this->getBridge(), $this->appBootstrap, $this->appenv, $this->memoryLimit, $this->memoryCheckTime);
+                $child->listenHttpServer();
+                exit;
+            }
         }
     }
 }

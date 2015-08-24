@@ -1,19 +1,16 @@
 <?php
-
 namespace PHPPM;
 
+use PHPPM\Bootstraps\BootstrapInterface;
 use React\Http\Request;
 use React\Http\Response;
 use React\Socket\ConnectionException;
 use Rephp\LoopEvent\SchedulerLoop;
-use Rephp\Scheduler\SystemCall;
-use Rephp\Scheduler\Task;
 use Rephp\Server\Server;
 use Rephp\Socket\Socket;
 
 class ProcessSlave
 {
-
     /**
      * @var \React\EventLoop\LibEventLoop|\React\EventLoop\StreamSelectLoop
      */
@@ -40,14 +37,38 @@ class ProcessSlave
     protected $appenv;
 
     /**
+     * Memory limit in MB
+     *
+     * @var int
+     */
+    protected $memoryLimit;
+
+    /**
+     * Time in seconds
+     *
+     * @var int
+     */
+    protected $memoryCheckTime;
+
+    /**
      * @var integer
      */
     protected $port;
 
-    function __construct($port, $bridgeName = null, $appBootstrap, $appenv)
+    /**
+     * @param int                $port
+     * @param string|null        $bridgeName
+     * @param BootstrapInterface $appBootstrap
+     * @param string             $appenv
+     * @param int                $memoryLimit
+     * @param int                $memoryCheckTime
+     */
+    public function __construct($port, $bridgeName = null, $appBootstrap, $appenv, $memoryLimit, $memoryCheckTime)
     {
         $this->port = $port;
         $this->bridgeName = $bridgeName;
+        $this->memoryCheckTime = $memoryCheckTime;
+        $this->memoryLimit = $memoryLimit;
 
         $this->loop = new SchedulerLoop();
         $this->bootstrap($appBootstrap, $appenv);
@@ -68,8 +89,7 @@ class ProcessSlave
         if (null === $this->bridge && $this->bridgeName) {
             if (true === class_exists($this->bridgeName)) {
                 $bridgeClass = $this->bridgeName;
-            }
-            else {
+            } else {
                 $bridgeClass = sprintf('\\PHPPM\\Bridges\\%s', ucfirst($this->bridgeName));
             }
 
@@ -91,8 +111,9 @@ class ProcessSlave
         //---------------------
         $client = stream_socket_client('tcp://127.0.0.1:5500');
         $this->connection = new Socket($client, $this->loop);
-
-	$this->connection->on('close', \Closure::bind( function () { $this->shutdown(); }, $this ) );
+        $this->connection->on('close', \Closure::bind(function () {
+            $this->shutdown();
+        }, $this));
 
         $this->connection->write(json_encode(['cmd' => 'register', 'pid' => getmypid(), 'port' => $this->port]));
     }
@@ -102,28 +123,41 @@ class ProcessSlave
         $server = new Server($this->loop);
         $http = new \React\Http\Server($server);
         $http->on('request', array($this, 'onRequest'));
-
         $maxPort = $this->port + 99;
         while ($this->port < $maxPort) {
             try {
                 $server->listen($this->port);
                 break;
-            }
-            catch (ConnectionException $e) {
+            } catch (ConnectionException $e) {
                 $this->port++;
             }
         }
 
         $this->connectToMaster();
+        $this->addMemoryChecker();
         $this->loop->run();
+    }
+
+    /**
+     * if memory is exceeded restart slave
+     */
+    private function addMemoryChecker()
+    {
+        if ($this->memoryCheckTime > 0) {
+            $this->loop->addPeriodicTimer($this->memoryCheckTime, function () {
+                $mb = memory_get_usage(true) / 1024 / 1024;
+                if ($mb >= $this->memoryLimit) {
+                    $this->bye();
+                }
+            });
+        }
     }
 
     function onRequest(Request $request, Response $response)
     {
         if ($bridge = $this->getBridge()) {
             return $bridge->onRequest($request, $response);
-        }
-        else {
+        } else {
             $response->writeHead('404');
             $response->end('No Bridge Defined.');
         }

@@ -1,5 +1,4 @@
 <?php
-
 namespace PHPPM\Bridges;
 
 use PHPPM\AppBootstrapInterface;
@@ -28,8 +27,9 @@ class HttpKernel implements BridgeInterface
      * PHPPM\Bridges\BridgeInterface interface which should live within your app itself and
      * be able to be autoloaded.
      *
-     * @param string $appBootstrap The name of the class used to bootstrap the application
+     * @param string      $appBootstrap The name of the class used to bootstrap the application
      * @param string|null $appBootstrap The environment your application will use to bootstrap (if any)
+     *
      * @see http://stackphp.com
      */
     public function bootstrap($appBootstrap, $appenv)
@@ -37,7 +37,7 @@ class HttpKernel implements BridgeInterface
         require_once './vendor/autoload.php';
 
         if (false === class_exists($appBootstrap)) {
-            $appBootstrap = '\\' . $appBootstrap;
+            $appBootstrap = '\\'.$appBootstrap;
             if (false === class_exists($appBootstrap)) {
                 return false;
             }
@@ -57,7 +57,7 @@ class HttpKernel implements BridgeInterface
     /**
      * Handle a request using a HttpKernelInterface implementing application.
      *
-     * @param \React\Http\Request $request
+     * @param \React\Http\Request  $request
      * @param \React\Http\Response $response
      */
     public function onRequest(ReactRequest $request, ReactResponse $response)
@@ -68,7 +68,7 @@ class HttpKernel implements BridgeInterface
                 $syRequest->headers->replace($request->getHeaders());
                 $syRequest->setMethod($request->getMethod());
                 $syRequest->query->add($request->getQuery());
-                $syRequest->server->set('DOCUMENT_URI', '/index.php/' . $request->getPath());
+                $syRequest->server->set('DOCUMENT_URI', '/index.php/'.$request->getPath());
                 $syRequest->server->set('REQUEST_URI', $request->getPath());
                 $syRequest->server->set('SERVER_NAME', explode(':', $request->getHeaders()['Host'])[0]);
                 $syResponse = $this->application->handle($syRequest);
@@ -77,10 +77,14 @@ class HttpKernel implements BridgeInterface
                 $headers = array_map('current', $syResponse->headers->all());
                 $response->writeHead($syResponse->getStatusCode(), $headers);
                 $response->end($syResponse->getContent());
-            }
-            catch (\Exception $e) {
+
+                if (function_exists('gc_collect_cycles')) {
+                    gc_collect_cycles();
+                }
+            } catch (\Exception $e) {
                 error_log($e->getMessage());
             }
         }
     }
+
 }
