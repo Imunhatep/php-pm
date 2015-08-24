@@ -1,7 +1,7 @@
 PHP ProcessManager for Request-Response Applications
 ====================================================
 
-This is a fork of [marcj/php-pm](https://github.com/marcj/php-pm). 
+This is a fork of [marcj/php-pm](https://github.com/marcj/php-pm).
 
 PHP-PM is a process manager for Request-Response Frameworks running in a [@RePHP](https://github.com/Imunhatep/rephp) environment. The approach of this is to kill the expensive bootstrap of php (declaring symbols) and bootstrap of feature-rich frameworks.
 
@@ -40,6 +40,7 @@ Arguments:
 
 Options:
  --bridge              The bridge we use to convert a ReactPHP-Request to your target framework.
+ --host                Load-Balancer host. Default is 127.0.0.1
  --port                Load-Balancer port. Default is 8080
  --workers             Worker count. Default is 8. Should be minimum equal to the number of CPU cores.
  --app-env             The that your application will use to bootstrap.

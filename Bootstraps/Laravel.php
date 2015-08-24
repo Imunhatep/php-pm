@@ -2,13 +2,12 @@
 
 namespace PHPPM\Bootstraps;
 
-use PHPPM\Bootstraps\BootstrapInterface;
 use Stack\Builder;
 
 /**
  * A default bootstrap for the Laravel framework
  */
-class Laravel implements BootstrapInterface
+class Laravel implements StackableBootstrapInterface
 {
     /**
      * @var string|null The application environment
