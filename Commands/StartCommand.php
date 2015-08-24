@@ -22,6 +22,7 @@ class StartCommand extends Command
             ->setName('start')
             ->addArgument('working-directory', InputArgument::OPTIONAL, 'The root of your appplication.', './')
             ->addOption('bridge', null, InputOption::VALUE_OPTIONAL, 'The bridge we use to convert a ReactPHP-Request to your target framework.', 'HttpKernel')
+            ->addOption('host', null, InputOption::VALUE_OPTIONAL, 'Load-Balancer host. Default is 127.0.0.1', '127.0.0.1')
             ->addOption('port', null, InputOption::VALUE_OPTIONAL, 'Load-Balancer port. Default is 8080', 8080)
             ->addOption('workers', null, InputOption::VALUE_OPTIONAL, 'Worker count. Default is 8. Should be minimum equal to the number of CPU cores.', 8)
             ->addOption('app-env', null, InputOption::VALUE_OPTIONAL, 'The environment that your application will use to bootstrap (if any)', 'dev')
@@ -49,6 +50,7 @@ class StartCommand extends Command
         }
 
         $bridge = $this->optionOrConfig($input, $config, 'bridge');
+        $host = $this->optionOrConfig($input, $config, 'host');
         $port = (int)$this->optionOrConfig($input, $config, 'port');
         $workers = (int)$this->optionOrConfig($input, $config, 'workers');
         $appenv = $this->optionOrConfig($input, $config, 'app-env');
@@ -56,7 +58,7 @@ class StartCommand extends Command
         $memoryLimit = (int)$this->optionOrConfig($input, $config, 'memory-limit');
         $memoryCheckTime = (int)$this->optionOrConfig($input, $config, 'memory-check-time');
 
-        $handler = new ProcessManager($port, $workers);
+        $handler = new ProcessManager($host, $port, $workers);
         $handler->setBridge($bridge)
             ->setAppEnv($appenv)
             ->setAppBootstrap($appBootstrap)
