@@ -5,7 +5,9 @@ This is a fork of [marcj/php-pm](https://github.com/marcj/php-pm).
 
 PHP-PM is a process manager for Request-Response Frameworks running in a [@RePHP](https://github.com/Imunhatep/rephp) environment. The approach of this is to kill the expensive bootstrap of php (declaring symbols) and bootstrap of feature-rich frameworks.
 
-More information can be found in the article: [Bring High Performance Into Your PHP App (with ReactPHP)](http://marcjschmidt.de/blog/2014/02/08/php-high-performance.html)
+What is different from original repo, is that this PM is written specially for @RePHP framework, where  asynchronous nature achieved based on php5.5 generators, and does not need any event libraries.
+
+More information about original PM porpouse can be found in the article: [Bring High Performance Into Your PHP App (with ReactPHP)](http://marcjschmidt.de/blog/2014/02/08/php-high-performance.html)
 
 ## Install
 
