@@ -140,9 +140,12 @@ class HttpKernel implements BridgeInterface
             $query, $post, [], [], [], [], $content
         );
 
+        $queryString = count($reactRequest->getQuery()) > 0 ? '?'.http_build_query($reactRequest->getQuery()) : '';
+
         $syRequest->setMethod($method);
+        $syRequest->query->replace($reactRequest->getQuery());
         $syRequest->headers->replace($headers);
-        $syRequest->server->set('REQUEST_URI', $reactRequest->getPath());
+        $syRequest->server->set('REQUEST_URI', $reactRequest->getPath().$queryString);
         $syRequest->server->set('SERVER_NAME', explode(':', $headers['Host'])[0]);
 
         return $syRequest;
