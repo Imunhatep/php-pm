@@ -2,14 +2,13 @@
 
 namespace PHPPM\Bootstraps;
 
-use PHPPM\Bootstraps\BootstrapInterface;
 use Stack\Builder;
 use Symfony\Component\HttpKernel\HttpCache\Store;
 
 /**
  * A default bootstrap for the Symfony framework
  */
-class Symfony implements BootstrapInterface
+class Symfony implements StackableBootstrapInterface
 {
     /**
      * @var string|null The application environment

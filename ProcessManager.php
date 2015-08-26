@@ -78,19 +78,22 @@ class ProcessManager
      */
     protected $memoryCheckTime;
 
-    /**
-     * @var int
-     */
+    /** @var string */
+    protected $host = '127.0.0.1';
+
+    /** @var int */
     protected $port = 8080;
 
     /**
      * @param int $port
      * @param int $slaveCount
      */
-    function __construct($port = 8080, $slaveCount = 8)
+    function __construct($host = '127.0.0.1', $port = 8080, $slaveCount = 8)
     {
-        $this->slaveCount = $slaveCount;
+
+        $this->host = $host;
         $this->port = $port;
+        $this->slaveCount = $slaveCount;
     }
 
     public function fork()
@@ -211,7 +214,7 @@ class ProcessManager
     {
         $this->loop = new SchedulerLoop();
         $this->controller = new Server($this->loop);
-        $this->controller->on('connection', array($this, 'onSlaveConnection'));
+        $this->controller->on('connection', [$this, 'onSlaveConnection']);
         $this->controller->listen(5500);
 
         $this->loop->add($this->newInstanceTask(), 'MakeInstance');
@@ -224,7 +227,7 @@ class ProcessManager
     {
         $this->loop = \React\EventLoop\Factory::create();
         $this->controller = new \React\Socket\Server($this->loop);
-        $this->controller->on('connection', array($this, 'onSlaveConnection'));
+        $this->controller->on('connection', [$this, 'onSlaveConnection']);
         $this->controller->listen(5500);
 
         for ($i = 0; $i < $this->slaveCount; $i++) {
@@ -397,7 +400,7 @@ class ProcessManager
                 //echo "Started slave pid: $pid\n";
             } else {
                 // we are the child
-                $child = new ProcessSlave($this->port, $this->getBridge(), $this->appBootstrap, $this->appenv, $this->memoryLimit, $this->memoryCheckTime);
+                $child = new ProcessSlave($this->host, $this->port, $this->getBridge(), $this->appBootstrap, $this->appenv, $this->memoryLimit, $this->memoryCheckTime);
                 $child->listenHttpServer();
                 exit;
             }

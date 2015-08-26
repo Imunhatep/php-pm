@@ -50,12 +50,14 @@ class ProcessSlave
      */
     protected $memoryCheckTime;
 
-    /**
-     * @var integer
-     */
+    /** @var string */
+    protected $host;
+
+    /** @var integer */
     protected $port;
 
     /**
+     * @param string             $host
      * @param int                $port
      * @param string|null        $bridgeName
      * @param BootstrapInterface $appBootstrap
@@ -63,8 +65,9 @@ class ProcessSlave
      * @param int                $memoryLimit
      * @param int                $memoryCheckTime
      */
-    public function __construct($port, $bridgeName = null, $appBootstrap, $appenv, $memoryLimit, $memoryCheckTime)
+    public function __construct($host, $port, $bridgeName = null, $appBootstrap, $appenv, $memoryLimit, $memoryCheckTime)
     {
+        $this->host = $host;
         $this->port = $port;
         $this->bridgeName = $bridgeName;
         $this->memoryCheckTime = $memoryCheckTime;
@@ -122,11 +125,11 @@ class ProcessSlave
     {
         $server = new Server($this->loop);
         $http = new \React\Http\Server($server);
-        $http->on('request', array($this, 'onRequest'));
+        $http->on('request', [$this, 'onRequest']);
         $maxPort = $this->port + 99;
         while ($this->port < $maxPort) {
             try {
-                $server->listen($this->port);
+                $server->listen($this->port, $this->host);
                 break;
             } catch (ConnectionException $e) {
                 $this->port++;
