@@ -118,3 +118,7 @@ This setup is slower as we can't load balance incoming connection as fast as NGi
 but it's perfect for testing purposes.
 
 ![ReactPHP with internal Load-Balancer](doc/reactphp-internal-balancer.jpg)
+
+##License
+
+The code for php-pm is distributed under the terms of the GPLv3 license.
