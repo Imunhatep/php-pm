@@ -28,6 +28,7 @@ class StartCommand extends Command
             ->addOption('app-env', null, InputOption::VALUE_OPTIONAL, 'The environment that your application will use to bootstrap (if any)', 'dev')
             ->addOption('bootstrap', null, InputOption::VALUE_OPTIONAL, 'The class that will be used to bootstrap your application', 'PHPPM\Bootstraps\Symfony')
             ->addOption('memory-limit', null, InputOption::VALUE_OPTIONAL, 'The memory limit for one thread', 100)
+            ->addOption('worker-memory-limit', null, InputOption::VALUE_OPTIONAL, 'Memory limit per worker.', 25)
             ->addOption('memory-check-time', null, InputOption::VALUE_OPTIONAL, 'Time in seconds to check memory limit, by default - no check', 0)
             ->setDescription('Starts the server');
     }
@@ -57,8 +58,9 @@ class StartCommand extends Command
         $appBootstrap = $this->optionOrConfig($input, $config, 'bootstrap');
         $memoryLimit = (int)$this->optionOrConfig($input, $config, 'memory-limit');
         $memoryCheckTime = (int)$this->optionOrConfig($input, $config, 'memory-check-time');
+        $workerMemoryLimit = $this->optionOrConfig($input, $config, 'worker-memory-limit');
 
-        $handler = new ProcessManager($host, $port, $workers);
+        $handler = new ProcessManager($host, $port, $workers, $workerMemoryLimit);
         $handler->setBridge($bridge)
             ->setAppEnv($appenv)
             ->setAppBootstrap($appBootstrap)

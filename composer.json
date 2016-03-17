@@ -4,12 +4,12 @@
         { "type": "vcs", "url": "http://github.com/Imunhatep/rephp" }
     ],
     "require": {
-        "imunhatep/rephp": "@dev",
+        "imunhatep/rephp": "dev-master",
 
-        "stack/builder": "1.0.*",
-        "symfony/console": "~2.7.0",
-        "symfony/http-foundation": "~2.7.0",
-        "symfony/http-kernel": "~2.7.0"
+        "stack/builder": "^1.0.0",
+        "symfony/console": "^2.8|^3.0",
+        "symfony/http-foundation": "^2.8|^3.0",
+        "symfony/http-kernel": "^2.8|^3.0"
     },
     "bin": [
         "bin/ppm"
@@ -18,11 +18,5 @@
         "psr-4": {
             "PHPPM\\": ""
         }
-    },
-    "suggest": {
-        "php-pm/zend-adapter": "Zend application framework adapter"
-    },
-    "bin": [
-        "bin/ppm"
-    ]
+    }
 }

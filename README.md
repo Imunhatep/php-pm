@@ -5,11 +5,11 @@ PHP ProcessManager for Request-Response Applications
 This is a fork of [marcj/php-pm](https://github.com/marcj/php-pm).
 
 What is different from the original repo, is that this PM is written specially for [@RePHP](https://github.com/Imunhatep/rephp) framework, where  asynchronous 
-nature achieved based on php5.5 generators, and does not need any event libraries.
+nature achieved based on PHP5.5 generators, and does not need any event libraries.
 
 ### About
 
-PHP-PM is a process manager for Request-Response Frameworks running in a [@RePHP](https://github.com/Imunhatep/rephp) environment. The approach of this is to kill the expensive bootstrap of php (declaring symbols) and bootstrap of feature-rich frameworks.
+PHP-PM is a process manager for Request-Response Frameworks running in a [@RePHP](https://github.com/Imunhatep/rephp) environment. The approach of this is to kill the expensive bootstrap of PHP (declaring symbols) and bootstrap of feature-rich frameworks.
 
 More information about original PM porpouse can be found in the article: [Bring High Performance Into Your PHP App (with ReactPHP)](http://marcjschmidt.de/blog/2014/02/08/php-high-performance.html)
 
@@ -76,7 +76,7 @@ $ ./bin/ppm start ~/my/path/to/symfony/ --bridge=HttpKernel
 }
 ```
 
-All worker start a own HTTP Server which listens on port 5501, 5502, 5503 etc. Range is `5501 -> 5500+<workersCount>`.
+Each worker starts its own HTTP Server which listens on port 5501, 5502, 5503 etc. Range is `5501 -> 5500+<workersCount>`.
 
 ### Setup 1. Use external Load-Balancer
 
@@ -118,7 +118,7 @@ server {
 
 ### Setup 2. Use internal Load-Balancer
 
-This setup is slower as we can't load balance incoming connection as fast as NGiNX it does,
+This setup is slower as we can't load balance incoming connections as fast as NGiNX it does,
 but it's perfect for testing purposes.
 
 ![ReactPHP with internal Load-Balancer](doc/reactphp-internal-balancer.jpg)

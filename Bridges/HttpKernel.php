@@ -2,7 +2,6 @@
 
 namespace PHPPM\Bridges;
 
-use PHPPM\AppBootstrapInterface;
 use PHPPM\Bootstraps\BootstrapInterface;
 use PHPPM\Bootstraps\StackableBootstrapInterface;
 use React\Http\Request as ReactRequest;
@@ -57,6 +56,7 @@ class HttpKernel implements BridgeInterface
             $this->application = $bootstrap->getApplication();
 
             if ($bootstrap instanceof StackableBootstrapInterface) {
+                /** @var Builder $stack */
                 $stack = new Builder();
                 $stack = $bootstrap->getStack($stack);
                 $this->application = $stack->resolve($this->application);
@@ -82,8 +82,8 @@ class HttpKernel implements BridgeInterface
 
         $request->on(
             'data',
-            function ($data)
-            use ($request, $response, &$content, $contentLength) {
+            function ($data) use ($request, $response, &$content, $contentLength)
+            {
                 // read data (may be empty for GET request)
                 $content .= $data;
 
@@ -140,12 +140,12 @@ class HttpKernel implements BridgeInterface
             $query, $post, [], [], [], [], $content
         );
 
-        $queryString = count($reactRequest->getQuery()) > 0 ? '?'.http_build_query($reactRequest->getQuery()) : '';
+        $queryString = count($reactRequest->getQuery()) > 0 ? '?' . http_build_query($reactRequest->getQuery()) : '';
 
         $syRequest->setMethod($method);
         $syRequest->query->replace($reactRequest->getQuery());
         $syRequest->headers->replace($headers);
-        $syRequest->server->set('REQUEST_URI', $reactRequest->getPath().$queryString);
+        $syRequest->server->set('REQUEST_URI', $reactRequest->getPath() . $queryString);
         $syRequest->server->set('SERVER_NAME', explode(':', $headers['Host'])[0]);
 
         return $syRequest;

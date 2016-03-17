@@ -2,6 +2,7 @@
 
 namespace PHPPM;
 
+use React\Socket\ConnectionException;
 use Rephp\LoopEvent\SchedulerLoop;
 use Rephp\Socket\Socket;
 
@@ -29,7 +30,8 @@ class Client
     }
 
     /**
-     * @return \React\Socket\Connection
+     * @return \React\Socket\Connection|Socket
+     * @throws ConnectionException
      */
     protected function getConnection()
     {
@@ -37,8 +39,14 @@ class Client
             $this->connection->close();
             unset($this->connection);
         }
-        $client = stream_socket_client('tcp://127.0.0.1:5500');
+
+        $client = @stream_socket_client('tcp://127.0.0.1:'.$this->controllerPort);
+        if (!$client) {
+            throw new ConnectionException('Client stream opening have failed.');
+        }
+
         $this->connection = new Socket($client, $this->loop);
+
         return $this->connection;
     }
 
@@ -47,24 +55,28 @@ class Client
         $data['cmd'] = $command;
         $data['options'] = $options;
         $connection = $this->getConnection();
+        $loop = $this->loop;
 
-        $result = '';
-        $connection->on('data', function($data) use ($result) {
-            $result .= $data;
-        });
-
-        $connection->on('close', function() use ($callback, $result) {
-            $callback($result);
-        });
-
+        $connection->on( 'data', function ($data) use ($callback) { $callback($data); } );
+        $connection->on( 'end', function () use ($loop) { $loop->stop(); } );
+        $connection->on( 'error', function () use ($loop) { $loop->stop(); } );
         $connection->write(json_encode($data));
+
+        $this->loop->run();
     }
 
     public function getStatus(callable $callback)
     {
-        $this->request('status', [], function($result) use ($callback) {
-            $callback(json_decode($result, true));
-        });
+        $this->request( 'status', [], function ($result) use ($callback) { $callback(json_decode($result, true)); } );
     }
 
+    public function restart(callable $callback)
+    {
+        $this->request('restart', [], $callback);
+    }
+
+    public function stop($callback)
+    {
+        $this->request('stop', [], $callback);
+    }
 }

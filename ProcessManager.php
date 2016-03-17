@@ -1,6 +1,8 @@
 <?php
 namespace PHPPM;
 
+use PHPPM\Bootstraps\BootstrapInterface;
+use React\Socket\ConnectionException;
 use React\Socket\ConnectionInterface;
 use Rephp\LoopEvent\SchedulerLoop;
 use Rephp\Server\Server;
@@ -55,7 +57,7 @@ class ProcessManager
     protected $bridge;
 
     /**
-     * @var string
+     * @var BootstrapInterface
      */
     protected $appBootstrap;
 
@@ -85,12 +87,12 @@ class ProcessManager
     protected $port = 8080;
 
     /**
-     * @param int $port
-     * @param int $slaveCount
+     * @param string $host
+     * @param int    $port
+     * @param int    $slaveCount
      */
     function __construct($host = '127.0.0.1', $port = 8080, $slaveCount = 8)
     {
-
         $this->host = $host;
         $this->port = $port;
         $this->slaveCount = $slaveCount;
@@ -104,7 +106,8 @@ class ProcessManager
 
         if (!pcntl_fork()) {
             $this->run();
-        } else {
+        }
+        else {
             die('pcntl_fork function failed!');
         }
     }
@@ -130,11 +133,11 @@ class ProcessManager
     }
 
     /**
-     * @param string $appBootstrap
+     * @param BootstrapInterface $appBootstrap
      *
      * @return $this
      */
-    public function setAppBootstrap($appBootstrap)
+    public function setAppBootstrap(BootstrapInterface $appBootstrap)
     {
         $this->appBootstrap = $appBootstrap;
 
@@ -223,28 +226,17 @@ class ProcessManager
         $this->loop->run();
     }
 
-    public function run2()
-    {
-        $this->loop = \React\EventLoop\Factory::create();
-        $this->controller = new \React\Socket\Server($this->loop);
-        $this->controller->on('connection', [$this, 'onSlaveConnection']);
-        $this->controller->listen(5500);
-
-        for ($i = 0; $i < $this->slaveCount; $i++) {
-            $this->newInstance();
-        }
-
-        $this->run = true;
-        $this->loop->run();
-    }
-
     function onWeb(ConnectionInterface $incoming)
     {
         $slaveId = $this->getNextSlave();
         $port = $this->slaves[$slaveId]['port'];
-        $client = stream_socket_client('tcp://localhost:'.$port);
-        $redirect = new \React\Stream\Stream($client, $this->loop);
 
+        $client = @stream_socket_client('tcp://localhost:' . $port);
+        if (!$client) {
+            throw new ConnectionException('Please pass valid port.');
+        }
+
+        $redirect = new \React\Stream\Stream($client, $this->loop);
         $redirect->on(
             'close',
             function () use ($incoming) {
@@ -303,6 +295,7 @@ class ProcessManager
                         if ($slave['connection'] === $conn) {
                             unset($this->slaves[$idx]);
                             $this->checkSlaves();
+                            pcntl_waitpid($slave['pid'], $pidStatus);
                         }
                     }
                 },
@@ -320,8 +313,8 @@ class ProcessManager
     {
         $data = json_decode($data, true);
 
-        $method = 'command'.ucfirst($data['cmd']);
-        if (is_callable(array($this, $method))) {
+        $method = 'command' . ucfirst($data['cmd']);
+        if (is_callable([$this, $method])) {
             $this->$method($data, $conn);
         }
     }
@@ -336,15 +329,17 @@ class ProcessManager
     {
         $pid = (int)$data['pid'];
         $port = (int)$data['port'];
-        $this->slaves[] = array(
+
+        $this->slaves[$pid] = [
             'pid'        => $pid,
             'port'       => $port,
             'connection' => $conn
-        );
+        ];
 
+        $slavesReady = array_filter($this->slaves, function ($slave) { return is_numeric($slave['pid']); });
         if ($this->waitForSlaves && $this->slaveCount === count($this->slaves)) {
-            $slaves = array();
-            foreach ($this->slaves as $slave) {
+            $slaves = [];
+            foreach ($slavesReady as $slave) {
                 $slaves[] = $slave['port'];
             }
 
@@ -394,11 +389,13 @@ class ProcessManager
         $pid = pcntl_fork();
         if ($pid == -1) {
             die('could not fork');
-        } else {
+        }
+        else {
             if ($pid) {
                 // we are parent
                 //echo "Started slave pid: $pid\n";
-            } else {
+            }
+            else {
                 // we are the child
                 $child = new ProcessSlave($this->host, $this->port, $this->getBridge(), $this->appBootstrap, $this->appenv, $this->memoryLimit, $this->memoryCheckTime);
                 $child->listenHttpServer();

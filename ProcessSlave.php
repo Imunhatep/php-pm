@@ -59,13 +59,13 @@ class ProcessSlave
     /**
      * @param string             $host
      * @param int                $port
-     * @param string|null        $bridgeName
+     * @param string             $bridgeName
      * @param BootstrapInterface $appBootstrap
-     * @param string             $appenv
+     * @param string             $appEnv
      * @param int                $memoryLimit
      * @param int                $memoryCheckTime
      */
-    public function __construct($host, $port, $bridgeName = null, $appBootstrap, $appenv, $memoryLimit, $memoryCheckTime)
+    public function __construct($host, $port, $bridgeName, $appBootstrap, $appEnv, $memoryLimit, $memoryCheckTime)
     {
         $this->host = $host;
         $this->port = $port;
@@ -74,7 +74,7 @@ class ProcessSlave
         $this->memoryLimit = $memoryLimit;
 
         $this->loop = new SchedulerLoop();
-        $this->bootstrap($appBootstrap, $appenv);
+        $this->bootstrap($appBootstrap, $appEnv);
     }
 
     protected function shutdown()
@@ -92,7 +92,8 @@ class ProcessSlave
         if (null === $this->bridge && $this->bridgeName) {
             if (true === class_exists($this->bridgeName)) {
                 $bridgeClass = $this->bridgeName;
-            } else {
+            }
+            else {
                 $bridgeClass = sprintf('\\PHPPM\\Bridges\\%s', ucfirst($this->bridgeName));
             }
 
@@ -112,11 +113,16 @@ class ProcessSlave
     protected function connectToMaster()
     {
         //---------------------
-        $client = stream_socket_client('tcp://127.0.0.1:5500');
+        $client = @stream_socket_client('tcp://127.0.0.1:5500');
+        if (!$client) {
+            throw new ConnectionException('Slave process stream opening failed.');
+        }
+
         $this->connection = new Socket($client, $this->loop);
-        $this->connection->on('close', \Closure::bind(function () {
-            $this->shutdown();
-        }, $this));
+        $this->connection->on(
+            'close',
+            \Closure::bind( function () { $this->shutdown(); }, $this )
+        );
 
         $this->connection->write(json_encode(['cmd' => 'register', 'pid' => getmypid(), 'port' => $this->port]));
     }
@@ -126,12 +132,14 @@ class ProcessSlave
         $server = new Server($this->loop);
         $http = new \React\Http\Server($server);
         $http->on('request', [$this, 'onRequest']);
+
         $maxPort = $this->port + 99;
         while ($this->port < $maxPort) {
             try {
                 $server->listen($this->port, $this->host);
                 break;
-            } catch (ConnectionException $e) {
+            }
+            catch (ConnectionException $e) {
                 $this->port++;
             }
         }
@@ -147,12 +155,15 @@ class ProcessSlave
     private function addMemoryChecker()
     {
         if ($this->memoryCheckTime > 0) {
-            $this->loop->addPeriodicTimer($this->memoryCheckTime, function () {
-                $mb = memory_get_usage(true) / 1024 / 1024;
-                if ($mb >= $this->memoryLimit) {
-                    $this->bye();
+            $this->loop->addPeriodicTimer(
+                $this->memoryCheckTime,
+                function () {
+                    $mb = memory_get_usage(true) / 1024 / 1024;
+                    if ($mb >= $this->memoryLimit) {
+                        $this->bye();
+                    }
                 }
-            });
+            );
         }
     }
 
@@ -160,7 +171,8 @@ class ProcessSlave
     {
         if ($bridge = $this->getBridge()) {
             return $bridge->onRequest($request, $response);
-        } else {
+        }
+        else {
             $response->writeHead('404');
             $response->end('No Bridge Defined.');
         }
@@ -169,7 +181,7 @@ class ProcessSlave
     function bye()
     {
         if ($this->connection->isWritable()) {
-            $this->connection->write(json_encode(array('cmd' => 'unregister', 'pid' => getmypid())));
+            $this->connection->write(json_encode(['cmd' => 'unregister', 'pid' => getmypid()]));
             $this->connection->close();
         }
         $this->loop->stop();
