@@ -54,15 +54,14 @@ class StartCommand extends Command
         $host = $this->optionOrConfig($input, $config, 'host');
         $port = (int)$this->optionOrConfig($input, $config, 'port');
         $workers = (int)$this->optionOrConfig($input, $config, 'workers');
-        $appenv = $this->optionOrConfig($input, $config, 'app-env');
+        $appEnv = $this->optionOrConfig($input, $config, 'app-env');
         $appBootstrap = $this->optionOrConfig($input, $config, 'bootstrap');
         $memoryLimit = (int)$this->optionOrConfig($input, $config, 'memory-limit');
         $memoryCheckTime = (int)$this->optionOrConfig($input, $config, 'memory-check-time');
-        $workerMemoryLimit = $this->optionOrConfig($input, $config, 'worker-memory-limit');
 
-        $handler = new ProcessManager($host, $port, $workers, $workerMemoryLimit);
-        $handler->setBridge($bridge)
-            ->setAppEnv($appenv)
+        $handler = (new ProcessManager($host, $port, $workers))
+            ->setBridge($bridge)
+            ->setAppEnv($appEnv)
             ->setAppBootstrap($appBootstrap)
             ->setMemoryLimit($memoryLimit)
             ->setMemoryCheckTime($memoryCheckTime);
@@ -81,7 +80,7 @@ class StartCommand extends Command
     {
         $val = $input->getOption($name);
 
-        if (!$val && isset($config[$name])) {
+        if (!$val or isset($config[$name])) {
             $val = $config[$name];
         }
 

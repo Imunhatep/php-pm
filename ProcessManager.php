@@ -1,7 +1,6 @@
 <?php
 namespace PHPPM;
 
-use PHPPM\Bootstraps\BootstrapInterface;
 use React\Socket\ConnectionException;
 use React\Socket\ConnectionInterface;
 use Rephp\LoopEvent\SchedulerLoop;
@@ -57,7 +56,7 @@ class ProcessManager
     protected $bridge;
 
     /**
-     * @var BootstrapInterface
+     * @var string
      */
     protected $appBootstrap;
 
@@ -133,11 +132,11 @@ class ProcessManager
     }
 
     /**
-     * @param BootstrapInterface $appBootstrap
+     * @param string $appBootstrap
      *
      * @return $this
      */
-    public function setAppBootstrap(BootstrapInterface $appBootstrap)
+    public function setAppBootstrap($appBootstrap)
     {
         $this->appBootstrap = $appBootstrap;
 

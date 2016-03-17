@@ -60,7 +60,7 @@ class ProcessSlave
      * @param string             $host
      * @param int                $port
      * @param string             $bridgeName
-     * @param BootstrapInterface $appBootstrap
+     * @param string             $appBootstrap
      * @param string             $appEnv
      * @param int                $memoryLimit
      * @param int                $memoryCheckTime
